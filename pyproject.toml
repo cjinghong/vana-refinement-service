@@ -10,6 +10,7 @@ docker = "^7.1.0"
 vana = "^0.45.0"
 python-gnupg = "^0.5.4"
 eciespy = "^0.4.4"
+python-magic = "^0.4.27"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

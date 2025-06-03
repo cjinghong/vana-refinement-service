@@ -12,8 +12,7 @@ from refiner.middleware.log_request_id_handler import request_id_context
 from refiner.models.models import RefinementRequest, RefinementResponse
 from refiner.utils.cryptography import decrypt_file, ecies_encrypt
 from refiner.utils.docker import run_signed_container
-from refiner.utils.files import download_file
-
+from refiner.utils.files import download_file, detect_file_type
 
 def refine(
         client: vana.Client,
@@ -64,6 +63,16 @@ def refine(
         if not os.path.exists(decrypted_file_path) or decrypted_file_size == 0:
             raise FileDecryptionError(f"Decrypted file is empty or does not exist: {decrypted_file_path}")
         
+        # Detect + correct the decrypted file type based on the content
+        detected_extension = detect_file_type(decrypted_file_path)
+        current_extension = os.path.splitext(decrypted_file_path)[1]
+
+        if detected_extension != current_extension:
+            new_path = os.path.splitext(decrypted_file_path)[0] + detected_extension
+            os.rename(decrypted_file_path, new_path)
+            decrypted_file_path = new_path
+            vana.logging.info(f"Decrypted file type detected as {detected_extension} based on content")
+
         if os.getenv('CHAIN_NETWORK') == 'moksha' and os.getenv('DEBUG_FILES_DIR'):
             debug_dir = os.getenv('DEBUG_FILES_DIR')
             os.makedirs(debug_dir, exist_ok=True)
@@ -124,6 +133,13 @@ def refine(
                 details={"logs": docker_run_result.logs[-1000:]}  # Include last 1000 chars of logs
             )
         vana.logging.info(f"Refined file URL: {docker_run_result.output_data.refinement_url}")
+
+        if not docker_run_result.output_data and not docker_run_result.output_data.refinement_url:
+            raise RefinementBaseException(
+                status_code=400,
+                message="Refiner container did not output a refinement URL",
+                error_code="REFINER_CONTAINER_NO_OUTPUT"
+            )
 
         # 6. Add refinement to the data registry
         transaction_hash, transaction_receipt = client.add_refinement_with_permission(

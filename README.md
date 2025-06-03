@@ -84,6 +84,8 @@ The easiest way to run the service locally is using Docker Compose:
 
 While Vana provides a hosted instance, DLPs can self-host the Refinement Service. Follow the "Running Locally" instructions on the target machine. Ensure the host environment has Docker installed and running, and the necessary network access (e.g., to Vana RPC, IPFS). It is highly recommended to run the service within a TEE for production deployments.
 
+DLP owners must whitelist the accounts associated with their self-hosted Refinement Services to allow them to submit `addRefinementWithPermission` transactions. This can be done by calling the `addRefinementService` function on the Vana Data Refiner Registry contract at address `0x93c3EF89369fDcf08Be159D9DeF0F18AB6Be008c`.
+
 ## License
 
 [MIT License](LICENSE)
