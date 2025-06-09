@@ -7,7 +7,7 @@ authors = ["Kahtaf Alam <kahtaf@opendatalabs.xyz>"]
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 docker = "^7.1.0"
-vana = "^0.45.0"
+vana = "^0.47.0"
 python-gnupg = "^0.5.4"
 eciespy = "^0.4.4"
 python-magic = "^0.4.27"

@@ -82,13 +82,23 @@ def refine(
 
         # 3. Look up the refiner instructions
         refiner = client.get_refiner(request.refiner_id)
-        if refiner.get('dlp_id', 0) == 0:
+        dlp_id = refiner.get('dlp_id', 0)
+        if dlp_id == 0:
             raise RefinementBaseException(
                 status_code=404,
                 message=f"Refiner with ID {request.refiner_id} not found",
                 error_code="REFINER_NOT_FOUND"
             )
         vana.logging.info(f"Refiner for refiner ID {request.refiner_id}: {refiner}")
+
+        dlp_pub_key = client.get_dlp_pub_key(dlp_id)
+        if not dlp_pub_key:
+            raise RefinementBaseException(
+                status_code=404,
+                message=f"DLP public key for refiner {request.refiner_id} and DLP ID {dlp_id} not found",
+                error_code="REFINER_DLP_PUBLIC_KEY_NOT_FOUND"
+            )
+        vana.logging.info(f"DLP public key for DLP ID {dlp_id}: {dlp_pub_key}")
 
         # 4. Generate Refinement Encryption Key (REK) from the user's original encryption key
         hkdf = HKDF(
@@ -100,7 +110,7 @@ def refine(
         )
         master_key_bytes = bytes.fromhex(request.encryption_key.removeprefix('0x'))
         refinement_encryption_key = '0x' + hkdf.derive(master_key_bytes).hex()
-        encrypted_refinement_encryption_key, ephemeral_sk, nonce = ecies_encrypt(refiner.get('public_key'),
+        encrypted_refinement_encryption_key, ephemeral_sk, nonce = ecies_encrypt(dlp_pub_key,
                                                                                  refinement_encryption_key.encode())
         vana.logging.info(f"Encrypted encryption key: {encrypted_refinement_encryption_key.hex()}")
 
@@ -142,6 +152,48 @@ def refine(
             )
 
         # 6. Add refinement to the data registry
+        
+        # Ensure the refinement URL is a valid URL and the file is accessible
+        try:
+            vana.logging.info(f"Validating refinement URL: {docker_run_result.output_data.refinement_url}")
+            validation_file_path = download_file(docker_run_result.output_data.refinement_url)
+            validation_file_size = os.path.getsize(validation_file_path) if os.path.exists(validation_file_path) else 0
+            vana.logging.info(f"Successfully validated refinement URL, file size: {validation_file_size} bytes")
+            
+            # Clean up the validation file
+            if validation_file_path and os.path.exists(validation_file_path):
+                try:
+                    validation_temp_dir = os.path.dirname(validation_file_path)
+                    if os.path.isdir(validation_temp_dir):
+                        shutil.rmtree(validation_temp_dir)
+                        vana.logging.info(f"Cleaned up validation temporary directory: {validation_temp_dir}")
+                except Exception as cleanup_e:
+                    vana.logging.warning(f"Failed to clean up validation temporary directory: {cleanup_e}")
+                    
+            if validation_file_size == 0:
+                raise RefinementBaseException(
+                    status_code=400,
+                    message="Refinement URL points to an empty file",
+                    error_code="REFINEMENT_URL_EMPTY_FILE"
+                )
+        except FileDownloadError as e:
+            vana.logging.error(f"Refinement URL validation failed: {e.details.get('error', str(e))}")
+            raise RefinementBaseException(
+                status_code=400,
+                message=f"Refinement URL is not accessible: {e.details.get('error', str(e))}",
+                error_code="REFINEMENT_URL_INVALID",
+                details={"refinement_url": docker_run_result.output_data.refinement_url}
+            )
+        except Exception as e:
+            vana.logging.error(f"Unexpected error during refinement URL validation: {e}")
+            raise RefinementBaseException(
+                status_code=500,
+                message=f"Failed to validate refinement URL: {str(e)}",
+                error_code="REFINEMENT_URL_VALIDATION_ERROR",
+                details={"refinement_url": docker_run_result.output_data.refinement_url}
+            )
+        
+        # Write the refinement to the data registry
         transaction_hash, transaction_receipt = client.add_refinement_with_permission(
             file_id=request.file_id,
             refiner_id=request.refiner_id,

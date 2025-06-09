@@ -3188,14 +3188,14 @@ test = ["aiohttp (>=3.10.5)", "flake8 (>=5.0,<6.0)", "mypy (>=0.800)", "psutil",
 
 [[package]]
 name = "vana"
-version = "0.45.0"
+version = "0.47.0"
 description = ""
 optional = false
 python-versions = "<3.13,>=3.10"
 groups = ["main"]
 files = [
-    {file = "vana-0.45.0-py3-none-any.whl", hash = "sha256:70b4b87a7c972d9071c27611dc82217edf762eddb59e48490bf6f904d8ae94d3"},
-    {file = "vana-0.45.0.tar.gz", hash = "sha256:eebfd2c3020d8fb585608d83875d5713a9cf0f2bf5a21c9882c63df7d6711240"},
+    {file = "vana-0.47.0-py3-none-any.whl", hash = "sha256:edeb18a85f0b245b944d14d4b186031d8966a16f836ddedb057deb5f25a06848"},
+    {file = "vana-0.47.0.tar.gz", hash = "sha256:9297371953415fbb3a558ad405263a14c997e8a9ca11a8c24015c75181a26fca"},
 ]
 
 [package.dependencies]
@@ -3536,4 +3536,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.13"
-content-hash = "e66f0fb81ce64d4a5e5f9f9ef2d577b28ce5a3ab9b446b40203cd5163826f930"
+content-hash = "c9c0298cbfdeae4b5072916bd14d3ec27363e71151e0dbba9dc5f210441163fb"

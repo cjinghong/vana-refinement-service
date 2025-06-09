@@ -72,7 +72,7 @@ def run_signed_container(
     cache = get_image_cache()
 
     # Get container timeout from environment variable (default 10 seconds)
-    container_timeout = int(os.getenv('CONTAINER_TIMEOUT_SECONDS', '10'))
+    container_timeout = int(os.getenv('CONTAINER_TIMEOUT_SECONDS', '60'))
     vana.logging.debug(f"Container timeout set to {container_timeout} seconds")
 
     vana.logging.debug(f"Getting image from cache or downloading: {image_url}")

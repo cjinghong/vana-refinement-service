@@ -34,7 +34,11 @@ Triggers the refinement process for a specific file using a specific refiner def
 {
   "file_id": 1234,
   "encryption_key": "0xabcd1234...",
-  "refiner_id": 12
+  "refiner_id": 12,
+  "env_vars": {
+    "PINATA_API_KEY": "abc123",
+    "PINATA_API_SECRET": "efg456"
+  }
 }
 ```
 
